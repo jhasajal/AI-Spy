@@ -1,6 +1,9 @@
-# Psi-AceHack 🧠
+# Public Space Intelligence 🧠
 
 *Public Space Intelligence 🧠* is an AI-powered computer vision project built for hackathons. It performs real-time face detection, pose tracking, hand and gesture recognition, and more—all in one unified toolkit that runs in both browsers and Node.js.
+
+## Demo Link 🔗
+- "Watch the demo of our application here :* https://www.youtube.com/watch?v=XKNNjL03Vc8
 
 ## Overview
 
