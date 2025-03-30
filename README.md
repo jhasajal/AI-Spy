@@ -20,6 +20,9 @@
 
 ## Screenshots 
 ![App Screenshot](screenshots/demo_1.png)
+![App Screenshot](screenshots/demo_2.png)
+![App Screenshot](screenshots/demo_3.png)
+![App Screenshot](screenshots/demo_4.png)
 
 ## Usage
 
