@@ -18,6 +18,9 @@
 - *Smooth Performance:* Utilize smart buffering and result interpolation for fluid visuals.
 - *Simple API:* Easily integrate into web apps and server applications.
 
+## Screenshots 
+![App Screenshot](screenshots/demo_1.png)
+
 ## Usage
 
 Below is a basic HTML example to capture video input and display processed results on a canvas.
