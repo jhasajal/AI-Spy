@@ -79,7 +79,7 @@ Note: Replace AIToolkit with your actual class or object name as defined in your
 - Improve the UI for demo visualizations and interactive experiences.
 
 ## Team
-
+- *Team Name:* Coders Got Latent
 - *Project Lead:* Sajal Jha
 - *Team Members:* Pratibha Naulakha, Piyush Anand, Prabhat Teotia
 
