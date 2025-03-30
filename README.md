@@ -1,5 +1,3 @@
----
-
 # Psi-AceHack
 
 *Psi-AceHack* is an AI-powered computer vision project built for hackathons. It performs real-time face detection, pose tracking, hand and gesture recognition, and more—all in one unified toolkit that runs in both browsers and Node.js.
@@ -80,4 +78,3 @@ Note: Replace AIToolkit with your actual class or object name as defined in your
 
 This project is licensed under the MIT License.
 
----
