@@ -1,6 +1,6 @@
-# Psi-AceHack
+# Psi-AceHack 🧠
 
-*Psi-AceHack* is an AI-powered computer vision project built for hackathons. It performs real-time face detection, pose tracking, hand and gesture recognition, and more—all in one unified toolkit that runs in both browsers and Node.js.
+*Public Space Intelligence 🧠* is an AI-powered computer vision project built for hackathons. It performs real-time face detection, pose tracking, hand and gesture recognition, and more—all in one unified toolkit that runs in both browsers and Node.js.
 
 ## Overview
 
@@ -71,8 +71,8 @@ Note: Replace AIToolkit with your actual class or object name as defined in your
 
 ## Team
 
-- *Project Lead:* Your Name
-- *Team Members:* Member 1, Member 2, Member 3
+- *Project Lead:* Sajal Jha
+- *Team Members:* Pratibha Naulakha, Piyush Anand, Prabhat Teotia
 
 ## License
 
