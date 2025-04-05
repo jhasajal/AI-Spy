@@ -19,11 +19,15 @@
 // Newer versions of Human have richer functionality allowing for much cleaner & easier usage
 // It is recommended to use other demos such as `demo/typescript` for usage examples
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// import { MongoClient } from 'https://cdn.jsdelivr.net/npm/mongodb@4.17/browser.mjs';
 
-const SUPABASE_URL = "https://eugmznxkrlkmiuxxxamc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1Z216bnhrcmxrbWl1eHh4YW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjk3NDcsImV4cCI6MjA1NzAwNTc0N30.-fbxn3l8evz4kwvY3BqCKtkBdPRTCV-aKlQn74W9mC8";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// const SUPABASE_URL = "https://eugmznxkrlkmiuxxxamc.supabase.co";
+// const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1Z216bnhrcmxrbWl1eHh4YW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjk3NDcsImV4cCI6MjA1NzAwNTc0N30.-fbxn3l8evz4kwvY3BqCKtkBdPRTCV-aKlQn74W9mC8";
+// const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const API_BASE_URL = 'http://localhost:8080';
+
 import { Human } from '../dist/human.esm.js'; // equivalent of @vladmandic/human
 import Menu from './helpers/menu.js';
 import GLBench from './helpers/gl-bench.js';
@@ -31,6 +35,88 @@ import webRTC from './helpers/webrtc.js';
 import jsonView from './helpers/jsonview.js';
 
 let human;
+
+
+const dbService = {
+  insertionTimeout: null,
+  isRunning: false,
+
+  async insertEmotionScore(emotionData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/emotions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emotionData),
+      });
+      const result = await response.json();
+      console.log("Emotion data saved:", result);
+      return result;
+    } catch (err) {
+      console.error("Error saving emotion data:", err);
+      throw err;
+    }
+  },
+
+  async insertGazeMetrics(gazeData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gaze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(gazeData),
+      });
+      const result = await response.json();
+      console.log("Gaze data saved:", result);
+      return result;
+    } catch (err) {
+      console.error("Error saving gaze data:", err);
+      throw err;
+    }
+  },
+
+  // Start auto-insertion with 1-second interval between completions
+  startAutoInsertion(emotionDataFn, gazeDataFn, interval = 5000) {
+    if (this.isRunning) {
+      console.warn("Auto insertion is already running");
+      return;
+    }
+
+    this.isRunning = true;
+    const executeInsertion = async () => {
+      try {
+        const [emotionRes, gazeRes] = await Promise.all([
+          this.insertEmotionScore(emotionDataFn()),
+          this.insertGazeMetrics(gazeDataFn())
+        ]);
+        
+        console.log('Batch insertion completed:', { emotionRes, gazeRes });
+      } catch (error) {
+        console.error('Error in batch insertion:', error);
+      } finally {
+        if (this.isRunning) {
+          this.insertionTimeout = setTimeout(executeInsertion, interval);
+        }
+      }
+    };
+
+    executeInsertion();
+  },
+
+  // Stop auto-insertion
+  stopAutoInsertion() {
+    this.isRunning = false;
+    if (this.insertionTimeout) {
+      clearTimeout(this.insertionTimeout);
+      this.insertionTimeout = null;
+    }
+    console.log("Auto insertion stopped");
+  }
+};
+
+
 
 async function insertScore(scoreData) {
   const { data, error } = await supabase
@@ -78,7 +164,7 @@ let userConfig = {
   // body: { enabled: true, modelPath: 'movenet-multipose.json' },
   segmentation: { enabled: false },
   */
-  face: { iris: { enabled: true }, emotion: { enabled: true}, gaze: { enabled: true} },
+  face: { iris: { enabled: true }, emotion: { enabled: true}, gaze: { enabled: true } },
   hand: { enabled: false },
   body: { enabled: false },
   gesture: { enabled: true },
@@ -94,7 +180,7 @@ const drawOptions = {
   drawLabels: true,
   drawGestures: true,
   drawPolygons: false,
-  drawPoints: true,
+  drawPoints: false,
   fillPolygons: false,
   useCurves: true,
   useDepth: true,
@@ -814,79 +900,60 @@ async function resize() {
 
 async function logEmotions(result) {
   if (result && result.face && result.face.length > 0) {
-      console.log("Emotion Data:");
+    console.log("Emotion Data:");
 
-      // Loop through each detected face
-      for (const face of result.face) {
-          if (face.emotion && face.emotion.length > 0) {
-              let emotionData = {
-                  user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",  // Replace with actual user ID if available
-                  angry: 0,
-                  disgust: 0,
-                  fear: 0,
-                  happy: 0,
-                  sad: 0,
-                  surprise: 0,
-                  neutral: 0,
-                  // overall_score: 0,
-                  captured_at: new Date().toISOString(),
-              };
+    for (const face of result.face) {
+      if (face.emotion && face.emotion.length > 0) {
+        let emotionData = {
+          user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",
+          angry: 0,
+          disgust: 0,
+          fear: 0,
+          happy: 0,
+          sad: 0,
+          surprise: 0,
+          neutral: 0,
+          captured_at: new Date().toISOString(),
+        };
 
-              // Store detected emotions
-              for (const emotion of face.emotion) {
-                  const percentage = Math.round(emotion.score * 100); // Convert to percentage
-                  if (emotionData.hasOwnProperty(emotion.emotion)) {
-                      emotionData[emotion.emotion] = percentage;
-                  }
-              }
-
-              // Calculate overall score (average of all emotions)
-             
-
-              console.log("Pushing data to Supabase:", emotionData);
-
-              // Push data to Supabase
-              const { data, error } = await supabase
-                  .from("e_score") // Supabase table
-                  .insert([emotionData]);
-
-              if (error) {
-                  console.error("Error inserting data:", error.message);
-              } else {
-                  console.log("Data inserted successfully:", data);
-              }
+        for (const emotion of face.emotion) {
+          const percentage = Math.round(emotion.score * 100);
+          if (emotionData.hasOwnProperty(emotion.emotion)) {
+            emotionData[emotion.emotion] = percentage;
           }
+        }
+
+        console.log("Saving emotion data:", emotionData);
+        try {
+          await dbService.insertEmotionScore(emotionData);
+        } catch (error) {
+          console.error("Error saving emotion data:", error);
+        }
       }
+    }
   }
 }
 
+
 async function logGazeData(userId, yaw, roll, pitch, pupilX, pupilY, centerX, centerY, saccadeRate) {
-  // Calculate Focus Score, Distraction Index, and Cognitive Load
   let focusScore = Math.max(0, 1 - (Math.abs(yaw) + Math.abs(roll)) / 90);
   let pupilShift = Math.sqrt((pupilX - centerX) ** 2 + (pupilY - centerY) ** 2);
   let distractionIndex = (Math.abs(yaw) + Math.abs(roll) + pupilShift) / 3;
   let cognitiveLoad = Math.min(1, (saccadeRate + Math.abs(pitch)) / 10);
 
-  // Create data object
   const gazeData = {
-      user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",
-      focus_score: focusScore,
-      distraction_index: distractionIndex,
-      cognitive_load: cognitiveLoad,
-      captured_at: new Date().toISOString()
+    user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",
+    focus_score: focusScore,
+    distraction_index: distractionIndex,
+    cognitive_load: cognitiveLoad,
+    captured_at: new Date().toISOString()
   };
 
-  console.log("Pushing gaze data to Supabase:", gazeData);
-
-  // Insert data into Supabase
-  const { data, error } = await supabase
-      .from("gaze_metrics")
-      .insert([gazeData]);
-
-  if (error) {
-      console.error("Error inserting gaze data:", error.message);
-  } else {
-      console.log("Gaze data inserted successfully:", data);
+  console.log("Saving gaze data:", gazeData);
+  try {
+    await dbService.insertGazeMetrics(gazeData);
+  } catch (error) {
+    console.error("Error saving gaze data:", error);
   }
 }
 
@@ -983,6 +1050,7 @@ async function drawWarmup(res) {
 // }
 
 async function main() {
+  
   if (ui.exceptionHandler) {
     window.addEventListener('unhandledrejection', (evt) => {
       if (ui.detectThread) cancelAnimationFrame(ui.detectThread);
@@ -1086,6 +1154,14 @@ async function main() {
   document.getElementById('loader').style.display = 'none';
   document.getElementById('play').style.display = 'block';
   document.getElementById('results').style.display = 'none';
+
+  // try {
+  //   await initMongoDB();
+  // } catch (err) {
+  //   console.error("Failed to connect to MongoDB:", err);
+  //   status("Failed to connect to database");
+  //   return;
+  // }
 
   // init drag & drop
   // await dragAndDrop();
